@@ -1,0 +1,101 @@
+version: "3"
+
+services:
+
+  openhab:
+    container_name: openhab
+    restart: always
+#    image: openhab/openhab:3.2.0-snapshot
+    image: openhab/openhab:3.2.0.M5
+    network_mode: host
+    volumes:
+      - /etc/localtime:/etc/localtime:ro 
+      - /etc/timezone:/etc/timezone:ro 
+      - /home/pi/openhab/openhab_addons:/openhab/addons 
+      - /home/pi/openhab/openhab_conf:/openhab/conf 
+      - /home/pi/openhab/openhab_userdata:/openhab/userdata 
+#    environment:
+#      OPENHAB_HTTP_PORT: "8080"
+#      OPENHAB_HTTPS_PORT: "8443"
+#      EXTRA_JAVA_OPTS: "-Duser.timezone=Asia/Vladivostok"
+
+
+  esphome:
+    container_name: esphome
+    restart: always
+    ports:
+      - "6052:6052"
+    image: esphome/esphome-armv7:latest
+    volumes:
+      - /etc/localtime:/etc/localtime:ro 
+      - /etc/timezone:/etc/timezone:ro 
+      -  /home/pi/esphome:/config      
+      
+  nodered:
+    container_name: nodered
+    restart: always
+    image: nodered/node-red:latest
+    environment:
+       - TZ=Asia/Vladivostok
+    volumes:
+      - /etc/localtime:/etc/localtime:ro 
+      - /etc/timezone:/etc/timezone:ro 
+      - /home/pi/node-red/:/data
+
+     
+  nginx:
+    container_name: nginx
+    restart: always  
+    image: nginx:1.18.0-alpine
+    ports:
+      - "80:80"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro 
+      - /etc/timezone:/etc/timezone:ro
+      - /home/pi/nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - /home/pi/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - /home/pi/nginx/logs/:/var/log/nginx/
+      - /home/pi/nginx/www/:/www/
+
+  mosquitto:
+    container_name: mosquitto
+    restart: always    
+    image: eclipse-mosquitto:latest
+    ports:
+      - "1883:1883"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro 
+      - /etc/timezone:/etc/timezone:ro
+      - /home/pi/mosquitto/:/mosquitto/config/
+      - /home/pi/mosquitto/:/mosquitto/data
+      - /home/pi/mosquitto/:/mosquitto/log
+
+
+  frontail:
+    container_name: frontail
+    restart: always
+    image: welteki/frontail-openhab:latest
+    command: ["/bin/sh", "-c", "frontail  --url-path /frontail   --ui-highlight     --ui-highlight-preset /usr/local/lib/node_modules/frontail/preset/openhab.json     -t openhab     -l 2000     -n 200     /var/log/openhab2/events.log     /var/log/openhab2/openhab.log"]
+    volumes:
+      - /etc/localtime:/etc/localtime:ro 
+      - /etc/timezone:/etc/timezone:ro
+      - /home/pi/openhab/openhab_userdata/logs:/var/log/openhab2
+
+  
+  zigbee2mqtt:
+    container_name: zigbee2mqtt
+    image: koenkk/zigbee2mqtt
+    restart: always
+    ports:
+      - "8089:8080"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro 
+      - /etc/timezone:/etc/timezone:ro
+      - /home/pi/zigbee2mqtt/data:/app/data
+      - /run/udev:/run/udev:ro
+    environment:
+       - TZ=Asia/Vladivostok
+    devices:
+      # Make sure this matched your adapter location
+      - /dev/ttyUSB0:/dev/ttyUSB0
+ 
